@@ -15,6 +15,7 @@ spec:
     spec:
       containers:
       - name: app-container
-        image: nginx:latest
+        # ⚡ Configured to pull your app from your private enterprise registry
+        image: vamdevgoldregistry.azurecr.io/poc-app:latest
         ports:
         - containerPort: 8080
