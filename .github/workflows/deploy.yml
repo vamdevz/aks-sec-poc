@@ -1,0 +1,49 @@
+name: Secure Build and Deploy PoC
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Az CLI Login via OIDC
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Build Local Container Image
+      run: |
+        docker build -t poc-app:${{ github.sha }} .
+
+    - name: Run Security Scanner (Trivy)
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'poc-app:${{ github.sha }}'
+        format: 'table'
+        exit-code: '1' # This forces the pipeline to FAIL if high vulnerabilities are found
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'
+
+    - name: Set Kubernetes Context
+      uses: azure/aks-set-context@v3
+      with:
+        resource-group: 'vamdevtest'
+        cluster-name: 'az-k8s'
+        
+    - name: Deploy to AKS
+      run: |
+        kubectl apply -f deployment.yaml
