@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secured-poc-app
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: secured-poc-app
+  template:
+    metadata:
+      labels:
+        app: secured-poc-app
+    spec:
+      containers:
+      - name: app-container
+        image: nginx:latest
+        ports:
+        - containerPort: 8080
