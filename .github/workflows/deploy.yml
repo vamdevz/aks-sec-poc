@@ -24,16 +24,22 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+    # ⚡ Added authentication against your private enterprise registry
+    - name: Log into Azure Container Registry
+      run: az acr login --name vamdevgoldregistry
+
+    # ⚡ Tagged specifically for your private ACR domain
     - name: Build Local Container Image
       run: |
-        docker build -t poc-app:${{ github.sha }} .
+        docker build -t vamdevgoldregistry.azurecr.io/poc-app:${{ github.sha }} .
 
+    # ⚡ Pointed scanner to your registry target image
     - name: Run Security Scanner (Trivy)
       uses: aquasecurity/trivy-action@master
       with:
-        image-ref: 'poc-app:${{ github.sha }}'
+        image-ref: 'vamdevgoldregistry.azurecr.io/poc-app:${{ github.sha }}'
         format: 'table'
-        exit-code: '0' # This forces the pipeline to FAIL if high vulnerabilities are found
+        exit-code: '0' 
         ignore-unfixed: true
         vuln-type: 'os,library'
         severity: 'CRITICAL,HIGH'
